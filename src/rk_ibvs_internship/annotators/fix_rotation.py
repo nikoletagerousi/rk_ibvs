@@ -3,6 +3,8 @@ from timeit import default_timer
 
 import cv2
 import py_trees
+import rospy
+import std_msgs.msg
 
 import robokudo.utils.cv_helper
 from robokudo.cas import CASViews
@@ -10,7 +12,7 @@ import robokudo.types.scene
 import numpy as np
 from math import atan2, cos, sin, sqrt, pi
 from scipy import ndimage
-
+from std_msgs.msg import Float64
 
 class FixRotation(robokudo.annotators.core.BaseAnnotator):
     """Crops and rotates the color image"""
@@ -78,6 +80,7 @@ class FixRotation(robokudo.annotators.core.BaseAnnotator):
         Default construction. Minimal one-time init!
         """
         super().__init__(name, descriptor)
+        self.pub = rospy.Publisher('angle', Float64)
         self.logger.debug("%s.__init__()" % self.__class__.__name__)
 
     def update(self):
@@ -100,6 +103,7 @@ class FixRotation(robokudo.annotators.core.BaseAnnotator):
             class_name = hypothesis.classification.classname
 
             if class_name == 'Crackerbox':
+            # if class_name == 'Fork':
                 # Perform some action if the specific class is detected
                 mask = hypothesis.roi.mask
                 _, thresh = cv2.threshold(mask, 50, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
@@ -123,11 +127,18 @@ class FixRotation(robokudo.annotators.core.BaseAnnotator):
                 else:
                     rot_angle = new_angle - 90
 
-            fixed_rotated = ndimage.rotate(color, -rot_angle, reshape=True)
+                fixed_rotated = ndimage.rotate(color, -rot_angle, reshape=True)
+
 
         # visualize it in the robokudi gui
-            self.get_annotator_output_struct().set_image(fixed_rotated)
+                self.get_annotator_output_struct().set_image(fixed_rotated)
 
+        # update the cas with the rotated image
+                message = Float64()
+                message.data = rot_angle
+                self.pub.publish(message)
+                self.get_cas().annotations.append(rot_angle)
+                # self.get_cas().set(CASViews.COLOR_IMAGE, fixed_rotated)
 
         end_timer = default_timer()
         self.feedback_message = f'Processing took {(end_timer - start_timer):.4f}s'

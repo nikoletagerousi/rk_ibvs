@@ -5,6 +5,9 @@ from robokudo_depth_estimation.annotators.monodepth import Monodepth
 from robokudo_yolo.annotators.YoloAnnotator import YoloAnnotator
 from robokudo.annotators.crop_and_rotate import CropAndRotate
 from rk_ibvs_internship.annotators.fix_rotation import FixRotation
+from rk_ibvs_internship.annotators.depth_distance import DepthDistance
+from rk_ibvs_internship.annotators.pinhole_distance import PinholeDistance
+
 
 import robokudo.descriptors.camera_configs.config_hsr_wo_depth
 
@@ -39,9 +42,11 @@ class AnalysisEngine(robokudo.analysis_engine.AnalysisEngineInterface):
                 robokudo.idioms.pipeline_init(),
                 CollectionReaderAnnotator(descriptor=reader_config),
                 CropAndRotate(),
-                # Monodepth(),
+                Monodepth(),
                 YoloAnnotator(descriptor=yolo_descriptor),
-                FixRotation()
+                FixRotation(),
+                DepthDistance(),
+                PinholeDistance()
 
 
             ])
