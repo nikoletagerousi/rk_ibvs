@@ -137,6 +137,7 @@ class FixRotation(robokudo.annotators.core.BaseAnnotator):
                 message = Float64()
                 message.data = rot_angle
                 self.pub.publish(message)
+
                 self.get_cas().annotations.append(rot_angle)
                 # self.get_cas().set(CASViews.COLOR_IMAGE, fixed_rotated)
 

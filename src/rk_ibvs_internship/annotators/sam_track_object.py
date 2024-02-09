@@ -43,6 +43,9 @@ class SAMTrackObject(robokudo.annotators.core.BaseAnnotator):
 
 
     def update(self):
+        cam_to_world_transform = self.get_cas().get(robokudo.cas.CASViews.VIEWPOINT_CAM_TO_WORLD)
+
+
         start_timer = default_timer()
 
         # Read color image from the cas
@@ -122,15 +125,6 @@ class SAMTrackObject(robokudo.annotators.core.BaseAnnotator):
         color[full_mask == 255] = [0, 255, 0]
 
 
-
-
-
-        # # crop it
-        # cropped = color[self.descriptor.parameters.slice_x, self.descriptor.parameters.slice_y]
-        #
-        # # rotate it
-        # rotated = cv2.rotate(cropped, self.descriptor.parameters.rotate)
-        #
         # visualize it in the robokudi gui
         self.get_annotator_output_struct().set_image(color)
         #
