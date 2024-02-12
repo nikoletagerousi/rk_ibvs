@@ -78,7 +78,7 @@ class KeepInCenter(robokudo.annotators.core.BaseAnnotator):
 
         # # visualize it in the robokudi gui
         # Define text to be written on the image
-        box_text = f"Offset x: {offset_x:.5f}"
+        box_text = f"Offset x: {offset_x:.5f} Offset y: {offset_y:.5f}"
         # Position for the text
         position_box = (10, 30)
         # Font settings
