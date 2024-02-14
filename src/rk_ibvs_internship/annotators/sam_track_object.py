@@ -25,6 +25,7 @@ class SAMTrackObject(robokudo.annotators.core.BaseAnnotator):
 
                 self.sam_model = "mobile_sam.pt"
                 self.precision_mode = True
+                # self.classname = None
 
 
         parameters = Parameters()  # overwrite the parameters explicitly to enable auto-completion
@@ -62,6 +63,7 @@ class SAMTrackObject(robokudo.annotators.core.BaseAnnotator):
             class_name = hypothesis.classification.classname
 
             if class_name == 'Crackerbox' and not tracked:
+            # if class_name == self.descriptor.parameters.classname and not tracked:
                 roi = hypothesis.roi.roi
                 self.tracker.init(color, (roi.pos.x, roi.pos.y, roi.width, roi.height))
                 tracked = True

@@ -23,6 +23,8 @@ class DepthDistance(robokudo.annotators.core.BaseAnnotator):
                 self.slice_x = slice(70, 400)
                 self.slice_y = slice(40, 600)
 
+                # self.classname = None
+
         parameters = Parameters()  # overwrite the parameters explicitly to enable auto-completion
 
     def __init__(self, name="DepthDistance", descriptor=Descriptor()):
@@ -56,6 +58,7 @@ class DepthDistance(robokudo.annotators.core.BaseAnnotator):
 
                     # if class_name == 'Fork':
                     if class_name == 'Crackerbox':
+                    # if class_name == self.descriptor.parameters.classname:
                         roi = hypothesis.roi.roi
                         roi_depth = depth[roi.pos.y : (roi.pos.y + roi.height) , roi.pos.x : (roi.pos.x + roi.width)]
                         # roi_depth = depth[roi.height:roi.pos.y , roi.pos.x: roi.width]

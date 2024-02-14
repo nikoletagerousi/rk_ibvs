@@ -29,6 +29,8 @@ class KeepInCenter(robokudo.annotators.core.BaseAnnotator):
 
                 self.vector = ()
 
+                # self.classname = None
+
         parameters = Parameters()  # overwrite the parameters explicitly to enable auto-completion
 
     def __init__(self, name="KeepInCenter", descriptor=Descriptor()):
@@ -36,7 +38,7 @@ class KeepInCenter(robokudo.annotators.core.BaseAnnotator):
         Default construction. Minimal one-time init!
         """
         super().__init__(name, descriptor)
-        self.pub = rospy.Publisher('Vector', Vector3Stamped)
+        self.pub = rospy.Publisher('Movement', Vector3Stamped)
         self.logger.debug("%s.__init__()" % self.__class__.__name__)
 
     def update(self):
@@ -52,7 +54,11 @@ class KeepInCenter(robokudo.annotators.core.BaseAnnotator):
             assert isinstance(hypothesis, robokudo.types.scene.ObjectHypothesis)
             class_name = hypothesis.classification.classname
 
+            image_center_x = color.shape[1] / 2
+            image_center_y = color.shape[0] / 2
+
             if class_name == 'Crackerbox':
+            # if class_name == self.descriptor.parameters.classname:
                 roi = hypothesis.roi.roi
                 box_width = hypothesis.roi.roi.width
                 box_height = hypothesis.roi.roi.height
@@ -62,38 +68,47 @@ class KeepInCenter(robokudo.annotators.core.BaseAnnotator):
                 box_center_x = (box_x1 + box_x1 + box_width) / 2
                 box_center_y = (box_y1 + box_y1 + box_height) / 2
 
-                image_center_x = color.shape[1] / 2
-                image_center_y = color.shape[0] / 2
+                #image_center_x = color.shape[1] / 2
+                #image_center_y = color.shape[0] / 2
 
                 offset_x = image_center_x - box_center_x
                 offset_y = image_center_y - box_center_y
 
                 # create the normalized vector
-                self.vector[0] = offset_x / math.sqrt((offset_x * offset_x) + (offset_y * offset_y))
-                self.vector[1] = offset_y / math.sqrt((offset_x * offset_x) + (offset_y * offset_y))
+                self.vector[0] = - offset_x / math.sqrt((offset_x * offset_x) + (offset_y * offset_y))
+                self.vector[1] = - offset_y / math.sqrt((offset_x * offset_x) + (offset_y * offset_y))
                 self.vector[2] = 0
+
+
+
 
 
 
 
         # # visualize it in the robokudi gui
         # Define text to be written on the image
-        box_text = f"Offset x: {offset_x:.5f} Offset y: {offset_y:.5f}"
-        # Position for the text
-        position_box = (10, 30)
-        # Font settings
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        font_scale = 0.5
-        font_color = (255, 255, 255)
-        line_type = 2
-        # Write text on the image
-        text = cv2.putText(color, box_text, position_box, font, font_scale, font_color, line_type)
-        self.get_annotator_output_struct().set_image(text)
+        start = (image_center_x, image_center_y)
+        # end = (start[0] + self.vector[0], start[0] + self.vector[0])
+        end = (start[0] + offset_x, start[0] + offset_y)
+
+        vector = cv2.arrowedLine(color, (int(start[0]), int(start[1])), (int(end[0]), int(end[1])), (0,255,0), 2)
+
+        # box_text = f"Offset x: {offset_x:.5f} Offset y: {offset_y:.5f}"
+        # # Position for the text
+        # position_box = (10, 30)
+        # # Font settings
+        # font = cv2.FONT_HERSHEY_SIMPLEX
+        # font_scale = 0.5
+        # font_color = (255, 255, 255)
+        # line_type = 2
+        # # Write text on the image
+        # text = cv2.putText(color, box_text, position_box, font, font_scale, font_color, line_type)
+        self.get_annotator_output_struct().set_image(vector)
 
 
-
-        # visualize it in the robokudi gui
-        self.get_annotator_output_struct().set_image(text)
+        #
+        # # visualize it in the robokudi gui
+        # self.get_annotator_output_struct().set_image(text)
 
         message = Vector3Stamped()
         message.vector.x = self.vector[0]

@@ -38,6 +38,8 @@ class PinholeDistance(robokudo.annotators.core.BaseAnnotator):
                 self.slice_x = slice(70, 400)
                 self.slice_y = slice(40, 600)
 
+                # self.classname = None
+
         parameters = Parameters()  # overwrite the parameters explicitly to enable auto-completion
 
     def __init__(self, name="PinholeDistance", descriptor=Descriptor()):
@@ -84,6 +86,7 @@ class PinholeDistance(robokudo.annotators.core.BaseAnnotator):
                     class_name = hypothesis.classification.classname
 
                     if class_name == 'Crackerbox':
+                    # if class_name == self.descriptor.parameters.classname:
                     # if class_name == 'Fork':
                         roi = hypothesis.roi.roi
 

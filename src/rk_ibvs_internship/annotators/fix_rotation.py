@@ -73,6 +73,8 @@ class FixRotation(robokudo.annotators.core.BaseAnnotator):
                 self.slice_x = slice(70, 400)
                 self.slice_y = slice(40, 600)
 
+                # self.classname = None
+
         parameters = Parameters()  # overwrite the parameters explicitly to enable auto-completion
 
     def __init__(self, name="FixRotation", descriptor=Descriptor()):
@@ -80,7 +82,7 @@ class FixRotation(robokudo.annotators.core.BaseAnnotator):
         Default construction. Minimal one-time init!
         """
         super().__init__(name, descriptor)
-        self.pub = rospy.Publisher('angle', Float64)
+        self.pub = rospy.Publisher('Angle', Float64)
         self.logger.debug("%s.__init__()" % self.__class__.__name__)
 
     def update(self):
@@ -103,6 +105,7 @@ class FixRotation(robokudo.annotators.core.BaseAnnotator):
             class_name = hypothesis.classification.classname
 
             if class_name == 'Crackerbox':
+            # if class_name == self.descriptor.parameters.classname:
             # if class_name == 'Fork':
                 # Perform some action if the specific class is detected
                 mask = hypothesis.roi.mask
@@ -136,8 +139,10 @@ class FixRotation(robokudo.annotators.core.BaseAnnotator):
         # update the cas with the rotated image
                 message = Float64()
                 message.data = rot_angle
+                # message.data =  -rot_angle #gives a negative rotation angle to the right
                 self.pub.publish(message)
 
+                # the desired angle for rotation is being written on the CAS
                 self.get_cas().annotations.append(rot_angle)
                 # self.get_cas().set(CASViews.COLOR_IMAGE, fixed_rotated)
 

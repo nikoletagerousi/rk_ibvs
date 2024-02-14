@@ -39,6 +39,15 @@ class AnalysisEngine(robokudo.analysis_engine.AnalysisEngineInterface):
         yolo_descriptor.parameters.precision_mode = True
         yolo_descriptor.parameters.id2name_json_path = "weights/id2name.json"
 
+        # SAMTrackObject.Descriptor().parameters.classname = "Crackerbox"
+        #
+        # FixRotation.Descriptor().parameters.classname = SAMTrackObject.Descriptor.parameters.classname
+        # Distance.Descriptor().parameters.classname = SAMTrackObject.Descriptor.parameters.classname
+        # KeepInCenter.Descriptor().parameters.classname = SAMTrackObject.Descriptor.parameters.classname
+        # DepthDistance.Descriptor().parameters.classname = SAMTrackObject.Descriptor.parameters.classname
+        # PinholeDistance.Descriptor().parameters.classname = SAMTrackObject.Descriptor.parameters.classname
+
+
 
         seq = robokudo.pipeline.Pipeline("RWPipeline")
         seq.add_children(
