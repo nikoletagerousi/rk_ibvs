@@ -15,7 +15,7 @@ from scipy import ndimage
 from std_msgs.msg import Float64
 
 class FixRotation(robokudo.annotators.core.BaseAnnotator):
-    """Crops and rotates the color image"""
+    """Gives the gripper angle rotation in radians"""
 
     def rotate_image(self, source, angle):
         (h, w) = source.shape[:2]
@@ -63,8 +63,7 @@ class FixRotation(robokudo.annotators.core.BaseAnnotator):
         self.drawAxis(img, cntr, p1, (255, 255, 0), 1)  # this one is the blue axis
         self.drawAxis(img, cntr, p2, (0, 0, 255), 5)  # red axis
 
-        angle = atan2(eigenvectors[0, 1], eigenvectors[
-            0, 0])  # orientation in radians. Angle between the first eigenvector (blue in the picture) and the positive x axis
+        angle = atan2(eigenvectors[0, 1], eigenvectors[0, 0])  # orientation in radians. Angle between the first eigenvector and the positive x axis
         return angle, eigenvectors
     class Descriptor(robokudo.annotators.core.BaseAnnotator.Descriptor):
         class Parameters:
@@ -73,7 +72,7 @@ class FixRotation(robokudo.annotators.core.BaseAnnotator):
                 self.slice_x = slice(70, 400)
                 self.slice_y = slice(40, 600)
 
-                # self.classname = None
+                self.classname = None
 
         parameters = Parameters()  # overwrite the parameters explicitly to enable auto-completion
 
@@ -82,7 +81,7 @@ class FixRotation(robokudo.annotators.core.BaseAnnotator):
         Default construction. Minimal one-time init!
         """
         super().__init__(name, descriptor)
-        self.pub = rospy.Publisher('Angle', Float64)
+        self.pub = rospy.Publisher('hand_cam/angle', Float64)
         self.logger.debug("%s.__init__()" % self.__class__.__name__)
 
     def update(self):
@@ -90,12 +89,6 @@ class FixRotation(robokudo.annotators.core.BaseAnnotator):
 
         # Read color image from the cas
         color = self.get_cas().get(CASViews.COLOR_IMAGE)
-        # # self.get_cas().filter_annotations_by_type(robokudo.types.scene.ObjectHypothesis)
-        # # crop it
-        # cropped = color[self.descriptor.parameters.slice_x, self.descriptor.parameters.slice_y]
-        #
-        # # rotate it
-        # rotated = cv2.rotate(cropped, self.descriptor.parameters.rotate)
 
         # If the class of my object exists the SAM mask should be extracted
         object_hypothesis = self.get_cas().filter_annotations_by_type(robokudo.types.scene.ObjectHypothesis)
@@ -104,9 +97,10 @@ class FixRotation(robokudo.annotators.core.BaseAnnotator):
             assert isinstance(hypothesis, robokudo.types.scene.ObjectHypothesis)
             class_name = hypothesis.classification.classname
 
-            if class_name == 'Crackerbox':
-            # if class_name == self.descriptor.parameters.classname:
-            # if class_name == 'Fork':
+            rot_angle = 0
+
+            # if class_name == 'Crackerbox':
+            if class_name == self.descriptor.parameters.classname:
                 # Perform some action if the specific class is detected
                 mask = hypothesis.roi.mask
                 _, thresh = cv2.threshold(mask, 50, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
@@ -118,33 +112,44 @@ class FixRotation(robokudo.annotators.core.BaseAnnotator):
                 else:
                     angle, eigenvectors = self.getOrientation(contours[0], mask)
 
-                angle_degrees = np.rad2deg(angle)
+                # this should be used in cae we want the angle to be calculated in degrees
+                # angle_degrees = np.rad2deg(angle)
+                # angle1 = abs(angle_degrees)
+                # angle2 = 180 - angle1
+                # new_angle = min(angle1, angle2)
 
-                angle1 = abs(angle_degrees)
-                angle2 = 180 - angle1
+                angle1 = angle
+                angle2 = 3.14159265 - angle1
                 new_angle = min(angle1, angle2)
 
                 if (eigenvectors[0, 0] > 0 and eigenvectors[0, 1] > 0) or (
                         eigenvectors[0, 0] < 0 and eigenvectors[0, 1] < 0):
-                    rot_angle = 90 - new_angle
+                    # rot_angle = 90 - new_angle
+                    rot_angle = 1.57079633 - new_angle
                 else:
-                    rot_angle = new_angle - 90
+                    # rot_angle = new_angle - 90
+                    rot_angle = new_angle - 1.57079633
 
                 fixed_rotated = ndimage.rotate(color, -rot_angle, reshape=True)
 
-
-        # visualize it in the robokudi gui
+                # visualize it in the robokudi gui
                 self.get_annotator_output_struct().set_image(fixed_rotated)
 
-        # update the cas with the rotated image
-                message = Float64()
-                message.data = rot_angle
-                # message.data =  -rot_angle #gives a negative rotation angle to the right
-                self.pub.publish(message)
 
                 # the desired angle for rotation is being written on the CAS
                 self.get_cas().annotations.append(rot_angle)
                 # self.get_cas().set(CASViews.COLOR_IMAGE, fixed_rotated)
+
+
+            # if class_name == 'Crackerbox':
+            if class_name == self.descriptor.parameters.classname:
+                message = Float64()
+                message.data = - rot_angle
+                self.pub.publish(message)
+            else:
+                message = Float64()
+                message.data = 0
+                self.pub.publish(message)
 
         end_timer = default_timer()
         self.feedback_message = f'Processing took {(end_timer - start_timer):.4f}s'

@@ -33,19 +33,26 @@ class AnalysisEngine(robokudo.analysis_engine.AnalysisEngineInterface):
             camera_interface=robokudo.io.camera_interface.ROSCameraWoDepthInterface(camera_config))
 
         yolo_descriptor = YoloAnnotator.Descriptor()
+        tracker_descriptor = SAMTrackObject.Descriptor()
+        angle_descriptor = FixRotation.Descriptor()
+        movement_descriptor = KeepInCenter.Descriptor()
+        distance_descriptor = Distance.Descriptor()
+
+
         yolo_descriptor.parameters.ros_pkg_path = "robokudo"
         yolo_descriptor.parameters.weights_path = "weights/ycb_weights.pt"
         yolo_descriptor.parameters.threshold = 0.5
         yolo_descriptor.parameters.precision_mode = True
         yolo_descriptor.parameters.id2name_json_path = "weights/id2name.json"
 
-        # SAMTrackObject.Descriptor().parameters.classname = "Crackerbox"
-        #
-        # FixRotation.Descriptor().parameters.classname = SAMTrackObject.Descriptor.parameters.classname
-        # Distance.Descriptor().parameters.classname = SAMTrackObject.Descriptor.parameters.classname
-        # KeepInCenter.Descriptor().parameters.classname = SAMTrackObject.Descriptor.parameters.classname
-        # DepthDistance.Descriptor().parameters.classname = SAMTrackObject.Descriptor.parameters.classname
-        # PinholeDistance.Descriptor().parameters.classname = SAMTrackObject.Descriptor.parameters.classname
+
+        tracker_descriptor.parameters.classname = "Crackerbox"
+        angle_descriptor.parameters.classname = tracker_descriptor.parameters.classname
+        movement_descriptor.parameters.classname = angle_descriptor.parameters.classname
+        distance_descriptor.parameters.classname = movement_descriptor.parameters.classname
+
+        distance_descriptor.parameters.real_width = 60
+        distance_descriptor.parameters.real_height = 210
 
 
 
@@ -55,15 +62,15 @@ class AnalysisEngine(robokudo.analysis_engine.AnalysisEngineInterface):
                 robokudo.idioms.pipeline_init(),
                 CollectionReaderAnnotator(descriptor=reader_config),
                 CropAndRotate(),
-                Monodepth(),
+                # Monodepth(),
                 YoloAnnotator(descriptor=yolo_descriptor),
-                SAMTrackObject(),
+                SAMTrackObject(descriptor=tracker_descriptor),
                 # TrackObject(),
-                FixRotation(),
-                Distance(),
-                KeepInCenter(),
-                DepthDistance(),
-                PinholeDistance()
+                FixRotation(descriptor=angle_descriptor),
+                KeepInCenter(descriptor=movement_descriptor),
+                Distance(descriptor=distance_descriptor),
+                # DepthDistance(),
+                # PinholeDistance()
 
 
             ])

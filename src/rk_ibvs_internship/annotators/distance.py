@@ -23,6 +23,10 @@ class Distance(robokudo.annotators.core.BaseAnnotator):
                 self.slice_x = slice(70, 400)
                 self.slice_y = slice(40, 600)
 
+                self.classname = None
+                self.real_width = None
+                self.real_height = None
+
         parameters = Parameters()  # overwrite the parameters explicitly to enable auto-completion
 
     def __init__(self, name="Distance", descriptor=Descriptor()):
@@ -30,7 +34,7 @@ class Distance(robokudo.annotators.core.BaseAnnotator):
         Default construction. Minimal one-time init!
         """
         super().__init__(name, descriptor)
-        self.pub = rospy.Publisher('Distance', Float64)
+        self.pub = rospy.Publisher('hand_cam/distance', Float64)
         self.logger.debug("%s.__init__()" % self.__class__.__name__)
 
         self.list_length = 5
@@ -58,8 +62,10 @@ class Distance(robokudo.annotators.core.BaseAnnotator):
         focal_length_y = 226.92131144188522  # focal length in pixels-fx
 
         # Real dimensions of the object
-        real_width = 60  # width of the object (mm)
-        real_height = 210  # height of the object (mm)
+        real_width = self.descriptor.parameters.real_width
+        # real_width = 60  # width of the object (mm)
+        real_height = self.descriptor.parameters.real_height
+        # real_height = 210  # height of the object (mm)
 
         object_hypothesis_list = self.get_cas().filter_annotations_by_type(robokudo.types.scene.ObjectHypothesis)
         for hypothesis in object_hypothesis_list:
@@ -67,8 +73,8 @@ class Distance(robokudo.annotators.core.BaseAnnotator):
             class_name = hypothesis.classification.classname
             cv2.undistort
 
-            if class_name == 'Crackerbox':
-            # if class_name == self.descriptor.parameters.classname:
+            # if class_name == 'Crackerbox':
+            if class_name == self.descriptor.parameters.classname:
                 roi = hypothesis.roi.roi
                 box_width = hypothesis.roi.roi.width
                 box_height = hypothesis.roi.roi.height
@@ -85,16 +91,11 @@ class Distance(robokudo.annotators.core.BaseAnnotator):
                 # if counter > list_length
                 # calculate depth
                 if self.counter > self.list_length:
-                    # self.A = np.zeros((10, 3))
                     self.A = np.zeros((10, 1))
                     self.b = np.zeros((10, 1))
                     for i in range(self.list_length):
                         self.A[2*i, 0] = self.width[i]
                         self.A[2*i+1, 0] = self.height[i]
-
-                        # # Assign 1 to specific positions in the array
-                        # self.A[2*i, 1] = 1
-                        # self.A[2*i+1, 2] = 1
 
                         # Assign values from lists a and b to specific positions in array A
                         self.b[2*i, 0] = (self.width[i] * ((self.camera_position[i] - self.camera_position[4])) + (focal_length_x * real_width))
@@ -123,16 +124,21 @@ class Distance(robokudo.annotators.core.BaseAnnotator):
         # Write text on the image
         text = cv2.putText(color, box_text, position_box, font, font_scale, font_color, line_type)
 
-        # get the rotation angle from the cas
+        # get the rotation angle from the CAS
         if len(self.get_cas().annotations) > 0:
             rot_angle = self.get_cas().annotations[-1]
         else:
             return py_trees.Status.SUCCESS
 
-        if isinstance(self.get_cas().annotations[-1], float):
-            if rot_angle < 2 and rot_angle > -2:
-                message = Float64()
-                message.data = real_depth
+        # if class_name == 'Crackerbox':
+        if class_name == self.descriptor.parameters.classname:
+            if isinstance(self.get_cas().annotations[-1], float):
+                if rot_angle < 2 and rot_angle > -2:
+                    message = Float64()
+                    message.data = real_depth
+                else:
+                    message = Float64()
+                    message.data = -100
             else:
                 message = Float64()
                 message.data = -100
