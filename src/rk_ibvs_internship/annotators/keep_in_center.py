@@ -9,6 +9,7 @@ import robokudo.utils.cv_helper
 from robokudo.cas import CASViews
 from copy import deepcopy
 from geometry_msgs.msg import Vector3Stamped
+from std_msgs.msg import Float64
 
 
 
@@ -31,7 +32,8 @@ class KeepInCenter(robokudo.annotators.core.BaseAnnotator):
         Default construction. Minimal one-time init!
         """
         super().__init__(name, descriptor)
-        self.pub = rospy.Publisher('hand_cam/movement', Vector3Stamped)
+        # self.pub = rospy.Publisher('hand_cam/movement', Vector3Stamped)
+        # self.pub = rospy.Publisher('offset', Float64)
         self.logger.debug("%s.__init__()" % self.__class__.__name__)
 
         # defining these thresholds to avoid oscillation around the centralization of the camera to object
@@ -57,6 +59,11 @@ class KeepInCenter(robokudo.annotators.core.BaseAnnotator):
             assert isinstance(hypothesis, robokudo.types.scene.ObjectHypothesis)
             class_name = hypothesis.classification.classname
 
+            movement = robokudo.types.annotation.Movement()
+            movement.vector = self.vector
+            movement.threshold = self.threshold
+            movement.offset = offset_x
+
             image_center_x = color.shape[1] / 2
             image_center_y = color.shape[0] / 2
 
@@ -77,10 +84,13 @@ class KeepInCenter(robokudo.annotators.core.BaseAnnotator):
                 offset_x = image_center_x - box_center_x
                 offset_y = image_center_y - box_center_y
 
+                movement.offset = abs(offset_x)
+
                 # create the normalized vector
                 self.vector[0] = - offset_x / math.sqrt((offset_x * offset_x) + (offset_y * offset_y))
                 self.vector[1] = - offset_y / math.sqrt((offset_x * offset_x) + (offset_y * offset_y))
                 self.vector[2] = 0
+                movement.vector = self.vector
 
 
             # # visualize it in the robokudi gui
@@ -93,32 +103,41 @@ class KeepInCenter(robokudo.annotators.core.BaseAnnotator):
             self.get_annotator_output_struct().set_image(vector)
 
 
-        # if class_name == 'Crackerbox':
+
+
+
+        # # if class_name == 'Crackerbox':
         if class_name == self.descriptor.parameters.classname:
-            if offset_x <= self.threshold:
+            if abs(offset_x) <= self.threshold:
                 self.threshold = self.big_thres
             else:
                 self.threshold = self.small_thres
+            movement.threshold = self.threshold
 
-            if offset_x > self.threshold:
-                # move close to the target
-                message = Vector3Stamped()
-                message.vector.x = self.vector[0]
-                message.vector.y = self.vector[1]
-                message.vector.z = self.vector[2]
+            # message = Float64()
+            # message = offset_x
+            # self.pub.publish(message)
+            self.get_cas().annotations.append(movement)
 
-            else:
-                message = Vector3Stamped()
-                message.vector.x = 0
-                message.vector.y = 0
-                message.vector.z = 0
-
-        else:
-            message = Vector3Stamped()
-            message.vector.x = 0
-            message.vector.y = 0
-            message.vector.z = 0
-        self.pub.publish(message)
+        #     if offset_x > self.threshold:
+        #         # move close to the target
+        #         message = Vector3Stamped()
+        #         message.vector.x = self.vector[0]
+        #         message.vector.y = self.vector[1]
+        #         message.vector.z = self.vector[2]
+        #
+        #     else:
+        #         message = Vector3Stamped()
+        #         message.vector.x = 0
+        #         message.vector.y = 0
+        #         message.vector.z = 0
+        #
+        # else:
+        #     message = Vector3Stamped()
+        #     message.vector.x = 0
+        #     message.vector.y = 0
+        #     message.vector.z = 0
+        # self.pub.publish(message)
 
         end_timer = default_timer()
         self.feedback_message = f'Processing took {(end_timer - start_timer):.4f}s'

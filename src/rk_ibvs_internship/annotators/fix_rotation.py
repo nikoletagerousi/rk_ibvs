@@ -81,7 +81,7 @@ class FixRotation(robokudo.annotators.core.BaseAnnotator):
         Default construction. Minimal one-time init!
         """
         super().__init__(name, descriptor)
-        self.pub = rospy.Publisher('hand_cam/angle', Float64)
+        # self.pub = rospy.Publisher('hand_cam/angle', Float64)
         self.logger.debug("%s.__init__()" % self.__class__.__name__)
 
     def update(self):
@@ -93,11 +93,16 @@ class FixRotation(robokudo.annotators.core.BaseAnnotator):
         # If the class of my object exists the SAM mask should be extracted
         object_hypothesis = self.get_cas().filter_annotations_by_type(robokudo.types.scene.ObjectHypothesis)
 
+
         for hypothesis in object_hypothesis:
             assert isinstance(hypothesis, robokudo.types.scene.ObjectHypothesis)
             class_name = hypothesis.classification.classname
 
             rot_angle = 0
+
+            rotation = robokudo.types.annotation.Angle()
+            rotation.rot_angle = - rot_angle
+
 
             # if class_name == 'Crackerbox':
             if class_name == self.descriptor.parameters.classname:
@@ -132,24 +137,30 @@ class FixRotation(robokudo.annotators.core.BaseAnnotator):
 
                 fixed_rotated = ndimage.rotate(color, -rot_angle, reshape=True)
 
+
+
+
                 # visualize it in the robokudi gui
                 self.get_annotator_output_struct().set_image(fixed_rotated)
 
+                rotation.rot_angle = - rot_angle
 
                 # the desired angle for rotation is being written on the CAS
+                self.get_cas().annotations.append(rotation)
                 self.get_cas().annotations.append(rot_angle)
                 # self.get_cas().set(CASViews.COLOR_IMAGE, fixed_rotated)
 
 
-            # if class_name == 'Crackerbox':
-            if class_name == self.descriptor.parameters.classname:
-                message = Float64()
-                message.data = - rot_angle
-                self.pub.publish(message)
-            else:
-                message = Float64()
-                message.data = 0
-                self.pub.publish(message)
+            # # if class_name == 'Crackerbox':
+            # if class_name == self.descriptor.parameters.classname:
+            #
+            #     message = Float64()
+            #     message.data = - rot_angle
+            #     self.pub.publish(message)
+            # else:
+            #     message = Float64()
+            #     message.data = 0
+            #     self.pub.publish(message)
 
         end_timer = default_timer()
         self.feedback_message = f'Processing took {(end_timer - start_timer):.4f}s'

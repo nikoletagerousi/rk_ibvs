@@ -11,6 +11,7 @@ from rk_ibvs_internship.annotators.track_object import TrackObject
 from rk_ibvs_internship.annotators.sam_track_object import SAMTrackObject
 from rk_ibvs_internship.annotators.distance import Distance
 from rk_ibvs_internship.annotators.keep_in_center import KeepInCenter
+from rk_ibvs_internship.annotators.handle_messages import HandleMessages
 
 
 import robokudo.descriptors.camera_configs.config_hsr_wo_depth
@@ -37,6 +38,7 @@ class AnalysisEngine(robokudo.analysis_engine.AnalysisEngineInterface):
         angle_descriptor = FixRotation.Descriptor()
         movement_descriptor = KeepInCenter.Descriptor()
         distance_descriptor = Distance.Descriptor()
+        messages_descriptor = HandleMessages.Descriptor()
 
 
         yolo_descriptor.parameters.ros_pkg_path = "robokudo"
@@ -50,6 +52,7 @@ class AnalysisEngine(robokudo.analysis_engine.AnalysisEngineInterface):
         angle_descriptor.parameters.classname = tracker_descriptor.parameters.classname
         movement_descriptor.parameters.classname = angle_descriptor.parameters.classname
         distance_descriptor.parameters.classname = movement_descriptor.parameters.classname
+        messages_descriptor.parameters.classname = distance_descriptor.parameters.classname
 
         distance_descriptor.parameters.real_width = 60
         distance_descriptor.parameters.real_height = 210
@@ -71,6 +74,7 @@ class AnalysisEngine(robokudo.analysis_engine.AnalysisEngineInterface):
                 Distance(descriptor=distance_descriptor),
                 # DepthDistance(),
                 # PinholeDistance()
+                HandleMessages(descriptor=messages_descriptor)
 
 
             ])
