@@ -7,7 +7,6 @@ from robokudo.annotators.crop_and_rotate import CropAndRotate
 from rk_ibvs_internship.annotators.fix_rotation import FixRotation
 from rk_ibvs_internship.annotators.depth_distance import DepthDistance
 from rk_ibvs_internship.annotators.pinhole_distance import PinholeDistance
-from rk_ibvs_internship.annotators.track_object import TrackObject
 from rk_ibvs_internship.annotators.sam_track_object import SAMTrackObject
 from rk_ibvs_internship.annotators.distance import Distance
 from rk_ibvs_internship.annotators.keep_in_center import KeepInCenter
@@ -68,7 +67,6 @@ class AnalysisEngine(robokudo.analysis_engine.AnalysisEngineInterface):
                 # Monodepth(),
                 YoloAnnotator(descriptor=yolo_descriptor),
                 SAMTrackObject(descriptor=tracker_descriptor),
-                # TrackObject(),
                 FixRotation(descriptor=angle_descriptor),
                 KeepInCenter(descriptor=movement_descriptor),
                 Distance(descriptor=distance_descriptor),

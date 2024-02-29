@@ -104,7 +104,6 @@ class FixRotation(robokudo.annotators.core.BaseAnnotator):
             rotation.rot_angle = - rot_angle
 
 
-            # if class_name == 'Crackerbox':
             if class_name == self.descriptor.parameters.classname:
                 # Perform some action if the specific class is detected
                 mask = hypothesis.roi.mask
@@ -117,13 +116,13 @@ class FixRotation(robokudo.annotators.core.BaseAnnotator):
                 else:
                     angle, eigenvectors = self.getOrientation(contours[0], mask)
 
-                # this should be used in cae we want the angle to be calculated in degrees
+                ## this should be used in cae we want the angle to be calculated in degrees
                 # angle_degrees = np.rad2deg(angle)
                 # angle1 = abs(angle_degrees)
                 # angle2 = 180 - angle1
                 # new_angle = min(angle1, angle2)
 
-                angle1 = angle
+                angle1 = abs(angle)
                 angle2 = 3.14159265 - angle1
                 new_angle = min(angle1, angle2)
 
@@ -145,22 +144,9 @@ class FixRotation(robokudo.annotators.core.BaseAnnotator):
 
                 rotation.rot_angle = - rot_angle
 
-                # the desired angle for rotation is being written on the CAS
+
                 self.get_cas().annotations.append(rotation)
-                self.get_cas().annotations.append(rot_angle)
-                # self.get_cas().set(CASViews.COLOR_IMAGE, fixed_rotated)
 
-
-            # # if class_name == 'Crackerbox':
-            # if class_name == self.descriptor.parameters.classname:
-            #
-            #     message = Float64()
-            #     message.data = - rot_angle
-            #     self.pub.publish(message)
-            # else:
-            #     message = Float64()
-            #     message.data = 0
-            #     self.pub.publish(message)
 
         end_timer = default_timer()
         self.feedback_message = f'Processing took {(end_timer - start_timer):.4f}s'

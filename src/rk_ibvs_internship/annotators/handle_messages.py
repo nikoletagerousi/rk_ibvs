@@ -1,3 +1,4 @@
+roscore
 from timeit import default_timer
 
 import cv2

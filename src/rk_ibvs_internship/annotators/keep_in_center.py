@@ -8,8 +8,7 @@ import robokudo.types.scene
 import robokudo.utils.cv_helper
 from robokudo.cas import CASViews
 from copy import deepcopy
-from geometry_msgs.msg import Vector3Stamped
-from std_msgs.msg import Float64
+
 
 
 
@@ -78,8 +77,6 @@ class KeepInCenter(robokudo.annotators.core.BaseAnnotator):
                 box_center_x = (box_x1 + box_x1 + box_width) / 2
                 box_center_y = (box_y1 + box_y1 + box_height) / 2
 
-                #image_center_x = color.shape[1] / 2
-                #image_center_y = color.shape[0] / 2
 
                 offset_x = image_center_x - box_center_x
                 offset_y = image_center_y - box_center_y
@@ -95,18 +92,13 @@ class KeepInCenter(robokudo.annotators.core.BaseAnnotator):
 
             # # visualize it in the robokudi gui
             start = (image_center_x, image_center_y)
-            # end = (start[0] + self.vector[0], start[0] + self.vector[0])
-            end = (start[0] + offset_x, start[0] + offset_y)
+            end = (box_center_x, box_center_y)
 
             vector = cv2.arrowedLine(color, (int(start[0]), int(start[1])), (int(end[0]), int(end[1])), (0,255,0), 2)
 
             self.get_annotator_output_struct().set_image(vector)
 
 
-
-
-
-        # # if class_name == 'Crackerbox':
         if class_name == self.descriptor.parameters.classname:
             if abs(offset_x) <= self.threshold:
                 self.threshold = self.big_thres
@@ -114,30 +106,8 @@ class KeepInCenter(robokudo.annotators.core.BaseAnnotator):
                 self.threshold = self.small_thres
             movement.threshold = self.threshold
 
-            # message = Float64()
-            # message = offset_x
-            # self.pub.publish(message)
             self.get_cas().annotations.append(movement)
 
-        #     if offset_x > self.threshold:
-        #         # move close to the target
-        #         message = Vector3Stamped()
-        #         message.vector.x = self.vector[0]
-        #         message.vector.y = self.vector[1]
-        #         message.vector.z = self.vector[2]
-        #
-        #     else:
-        #         message = Vector3Stamped()
-        #         message.vector.x = 0
-        #         message.vector.y = 0
-        #         message.vector.z = 0
-        #
-        # else:
-        #     message = Vector3Stamped()
-        #     message.vector.x = 0
-        #     message.vector.y = 0
-        #     message.vector.z = 0
-        # self.pub.publish(message)
 
         end_timer = default_timer()
         self.feedback_message = f'Processing took {(end_timer - start_timer):.4f}s'

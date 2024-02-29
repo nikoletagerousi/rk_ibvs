@@ -10,7 +10,6 @@ import robokudo.utils.cv_helper
 from robokudo.cas import CASViews
 from copy import deepcopy
 import numpy as np
-from std_msgs.msg import Float64
 
 
 class Distance(robokudo.annotators.core.BaseAnnotator):
@@ -48,13 +47,6 @@ class Distance(robokudo.annotators.core.BaseAnnotator):
         self.b = []
         self.x = []
 
-        # self.K = np.array([[226.41, 0, 332.88], [0, 226.92, 266.83], [0, 0, 1]])
-        # self.D = np.array([-0.11, 0.07, -0.01, -0.0003, 0])
-        # self.R = np.eye(3, dtype=np.float64)
-        # self.P = np.zeros((3, 4), dtype=np.float64)
-        # self.mapx = ()
-        # self.mapy = ()
-
     def update(self):
         start_timer = default_timer()
         real_depth = -100
@@ -71,9 +63,8 @@ class Distance(robokudo.annotators.core.BaseAnnotator):
 
         # Real dimensions of the object
         real_width = self.descriptor.parameters.real_width
-        # real_width = 60  # width of the object (mm)
         real_height = self.descriptor.parameters.real_height
-        # real_height = 210  # height of the object (mm)
+
 
         object_hypothesis_list = self.get_cas().filter_annotations_by_type(robokudo.types.scene.ObjectHypothesis)
         for hypothesis in object_hypothesis_list:
@@ -83,7 +74,6 @@ class Distance(robokudo.annotators.core.BaseAnnotator):
             dist = robokudo.types.annotation.Distance()
             dist.distance = real_depth
 
-            # if class_name == 'Crackerbox':
             if class_name == self.descriptor.parameters.classname:
                 roi = hypothesis.roi.roi
                 box_width = hypothesis.roi.roi.width
@@ -111,7 +101,7 @@ class Distance(robokudo.annotators.core.BaseAnnotator):
                         self.b[2*i, 0] = (self.width[i] * ((self.camera_position[i] - self.camera_position[4])) + (focal_length_x * real_width))
                         self.b[2*i+1, 0] = (self.height[i] * ((self.camera_position[i] - self.camera_position[4])) + (focal_length_y * real_height))
 
-                        # solve least squares
+                    # solve least squares
                     depth, residuals, rank, s = np.linalg.lstsq(self.A, self.b, rcond=None)
 
                     real_depth = depth[0][0]
@@ -136,59 +126,10 @@ class Distance(robokudo.annotators.core.BaseAnnotator):
 
                     dist.distance = real_depth
 
-                    # # callibrating the camera if distance is smaller than 20cm
-                    # if real_depth < 0.2:
-                    #     # color = cv2.undistort(color, self.K, self.D)
-                    #     # color = cv2.fisheye.undistortImage(color, self.K, self.D)
-                    #     ncm, _ = cv2.getOptimalNewCameraMatrix(self.K, self.D, size, 0)
-                    #     for j in range(3):
-                    #         for i in range(3):
-                    #             self.P[j, i] = ncm[j, i]
-                    #     self.mapx, self.mapy = cv2.initUndistortRectifyMap(self.K, self.D, self.R, ncm, size, cv2.CV_32FC1)
-                    #     color = cv2.remap(color, self.mapx, self.mapy, cv2.INTER_LINEAR)
 
                 self.counter += 1
             self.get_cas().annotations.append(dist)
 
-        # # visualize it in the robokudi gui
-        # # Define text to be written on the image
-        # box_text = f"Box to gripper distance: {real_depth:.5f}"
-        # # Position for the text
-        # position_box = (10, 30)
-        # # Font settings
-        # font = cv2.FONT_HERSHEY_SIMPLEX
-        # font_scale = 0.5
-        # font_color = (255, 255, 255)
-        # line_type = 2
-        # # Write text on the image
-        # text = cv2.putText(color, box_text, position_box, font, font_scale, font_color, line_type)
-
-        # angle = self.get_cas().filter_annotations_by_type(robokudo.types.annotation.Angle)
-        # if len(angle) > 0:
-        #     rot_angle = angle[0].rot_angle
-        # if len(self.get_cas().annotations) > 0:
-        #     rot_angle = self.get_cas().annotations[-1]
-        # else:
-        #     return py_trees.Status.SUCCESS
-        #
-        # # if class_name == 'Crackerbox':
-        # if class_name == self.descriptor.parameters.classname:
-        #     if isinstance(self.get_cas().annotations[-1], float):
-        #         if rot_angle < 2 and rot_angle > -2:
-        #             message = Float64()
-        #             message.data = real_depth
-        #         else:
-        #             message = Float64()
-        #             message.data = -100
-        #     else:
-        #         message = Float64()
-        #         message.data = -100
-        # else:
-        #     message = Float64()
-        #     message.data = -100
-        # self.pub.publish(message)
-
-        # self.get_annotator_output_struct().set_image(text)
 
         end_timer = default_timer()
         self.feedback_message = f'Processing took {(end_timer - start_timer):.4f}s'

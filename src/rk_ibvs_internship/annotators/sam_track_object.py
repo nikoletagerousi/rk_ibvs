@@ -95,19 +95,8 @@ class SAMTrackObject(robokudo.annotators.core.BaseAnnotator):
             x2 = int(object_hypothesis.roi.roi.width + x1)
             y2 = int(object_hypothesis.roi.roi.height + y1)
 
-            # x1 = object_hypothesis.roi.roi.pos.x
-            # y1 = object_hypothesis.roi.roi.pos.y
-            # x2 = object_hypothesis.roi.roi.width + x1
-            # y2 = object_hypothesis.roi.roi.height + y1
-
             w = int(object_hypothesis.roi.roi.width)
             h = int(object_hypothesis.roi.roi.height)
-
-            # w = object_hypothesis.roi.roi.width
-            # h = object_hypothesis.roi.roi.height
-
-            # object_hypothesis.bbox = [x1, y1, x2, y2]
-
 
 
             if not self.descriptor.parameters.precision_mode:
@@ -125,7 +114,6 @@ class SAMTrackObject(robokudo.annotators.core.BaseAnnotator):
             # the try except was added
             object_hypothesis.roi.mask = \
                 robokudo.utils.cv_helper.crop_image(object_hypothesis.roi.mask, (int(x1), int(y1)), (int(w), int(h)))
-                # robokudo.utils.cv_helper.crop_image(object_hypothesis.roi.mask, (x1, y1), (w, h))
 
 
 
@@ -140,15 +128,12 @@ class SAMTrackObject(robokudo.annotators.core.BaseAnnotator):
 
             color[full_mask == 255] = [0, 255, 0]
 
-            # self.tracked = False
 
 
 
         # visualize it in the robokudi gui
         self.get_annotator_output_struct().set_image(color)
-        #
-        # # update the cas with the rotated image
-        # self.get_cas().set(CASViews.COLOR_IMAGE, rotated)
+
 
         end_timer = default_timer()
         self.feedback_message = f'Processing took {(end_timer - start_timer):.4f}s'
